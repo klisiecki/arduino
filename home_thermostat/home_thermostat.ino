@@ -16,12 +16,13 @@ struct HEATING_AREA {
   const char areaName[8];
   float currentTemp;
   float setTemp;
+  byte pin;
 } areas[] =
 {
-  {"salon   ", -1, 21.5},
-  {"lazienka", -1, 22},
-  {"kuchnia ", -1, 21},
-  {"korytarz", -1, 20.5}
+  {"salon   ", -1, 21.5, A1},
+  {"lazienka", -1, 22,   A2},
+  {"kuchnia ", -1, 21,   A3},
+  {"korytarz", -1, 20.5, A4}
 };
 
 const byte areasCount = (sizeof(areas) / sizeof(HEATING_AREA));
@@ -42,6 +43,9 @@ int read_LCD_buttons() {
 
 void setup() {
   lcd.begin(16, 2);
+  for (int i = 0; i < areasCount; i++) {
+    pinMode(areas[i].pin, OUTPUT);
+  }
 }
 
 void loop() {
@@ -91,4 +95,5 @@ void refreshScreen() {
   lcd.print(">");
   lcd.setCursor(1, 0);
   lcd.print(areas[selectedArea].areaName);
+  digitalWrite(areas[selectedArea].pin, HIGH);
 }
