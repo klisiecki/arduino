@@ -13,16 +13,20 @@ int adc_key_in  = 0;
 #define btnNONE   5
 
 struct HEATING_AREA {
-  const char areaName[8];
+  const char areaName[9];
   float currentTemp;
   float setTemp;
-  byte pin;
+  int pin;
 } areas[] =
 {
-  {"salon   ", -1, 21.5, A1},
-  {"lazienka", -1, 22,   A2},
-  {"kuchnia ", -1, 21,   A3},
-  {"korytarz", -1, 20.5, A4}
+  {"salon    ", -1, 21.5, A1},
+  {"kuchnia  ", -1, 22,   A2},
+  {"sypialnia", -1, 21,   A3},
+  {"pokoj    ", -1, 20.5, A4},
+  {"lazienka ", -1, 20.5, 0},
+  {"korytarz1", -1, 20.5, 1},
+  {"korytarz2", -1, 20.5, 11},
+  {"garderoba", -1, 20.5, 12},
 };
 
 const byte areasCount = (sizeof(areas) / sizeof(HEATING_AREA));
@@ -55,6 +59,7 @@ void loop() {
   }
   lastPressed = lcdKey;
   refreshScreen();
+  updatePinsState();
 }
 
 void keyPressed (int lcdKey) {
@@ -95,5 +100,15 @@ void refreshScreen() {
   lcd.print(">");
   lcd.setCursor(1, 0);
   lcd.print(areas[selectedArea].areaName);
-  digitalWrite(areas[selectedArea].pin, HIGH);
+}
+
+void updatePinsState() {
+  for (int i = 0; i < areasCount; i++) {
+    if (i == selectedArea) {
+      digitalWrite(areas[i].pin, HIGH);
+    } else {
+      digitalWrite(areas[i].pin, LOW);
+    }
+  }
+
 }
