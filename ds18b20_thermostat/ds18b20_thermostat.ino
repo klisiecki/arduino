@@ -18,11 +18,13 @@ LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);  // Ustawienie ad
 
 int less = 7;
 int more = 5;
- 
+
 float temp;
-float tempSet = 21.5;
+float temp1;
+float temp2;
+float tempSet = 20;
 float tempMin = 15;
-float tempMax = 25;
+float tempMax = 28;
  
 void setup() {
   sensors.begin();
@@ -40,6 +42,10 @@ void setup() {
 
 void loop() {
   delay(500);
+   sensors.requestTemperatures();
+  temp1 = sensors.getTempCByIndex(0);
+  temp2 = sensors.getTempCByIndex(1);
+  temp = getCurrentTemp(temp1, temp1);
   if (temp > 0 && temp < tempSet) {
     digitalWrite(LED_BUILTIN, HIGH);
   } else {
@@ -53,19 +59,23 @@ void loop() {
     tempSet = tempSet + 0.5;
     Serial.println("more");
   }
-  sensors.requestTemperatures();
-  temp = sensors.getTempCByIndex(0);
 
   lcd.clear();  
   lcd.setCursor(0, 0);
 
-  String actual = "Aktualna: " + String(temp, 2);
+  String actual = String(temp1, 2) + " " + String(temp2, 2);
   lcd.print(actual);
   Serial.println(actual);
 
   lcd.setCursor(0,1);
-  String set = "Ustawiona: " + String(tempSet, 2);
+  String set = String(temp, 2) + "/" + String(tempSet, 2);
   lcd.print(set);
   Serial.println(set);
+}
 
+float getCurrentTemp(float temp1, float temp2) {
+  if (temp2 < 0 || temp2 > 40) {
+    return temp1;
+  }
+  return max(temp1, temp2);
 }

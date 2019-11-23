@@ -1,6 +1,11 @@
+#include <Wire.h>   // standardowa biblioteka Arduino
 #include <LiquidCrystal.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
 
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
+OneWire ds(2);
+DallasTemperature sensors(&ds);
 
 int lcdKey     = 0;
 int adc_key_in  = 0;
@@ -13,7 +18,7 @@ int adc_key_in  = 0;
 #define btnNONE   5
 
 struct HEATING_AREA {
-  const char areaName[9];
+  const char areaName[10];
   float currentTemp;
   float setTemp;
   int pin;
@@ -31,35 +36,39 @@ struct HEATING_AREA {
 
 const byte areasCount = (sizeof(areas) / sizeof(HEATING_AREA));
 
-byte selectedArea = 0;
+int selectedArea = -1;
 byte lastPressed = -1;
 
 int read_LCD_buttons() {
   adc_key_in = analogRead(0);
+  //Serial.println(adc_key_in);
   if (adc_key_in > 1000) return btnNONE;
   if (adc_key_in < 50)   return btnRIGHT;
-  if (adc_key_in < 250)  return btnUP;
-  if (adc_key_in < 450)  return btnDOWN;
-  if (adc_key_in < 650)  return btnLEFT;
-  if (adc_key_in < 850)  return btnSELECT;
+  if (adc_key_in < 150)  return btnUP;
+  if (adc_key_in < 300)  return btnDOWN;
+  if (adc_key_in < 450)  return btnLEFT;
+  if (adc_key_in < 700)  return btnSELECT;
   return btnNONE;
 }
 
 void setup() {
+  //Serial.begin(9600);
   lcd.begin(16, 2);
   for (int i = 0; i < areasCount; i++) {
     pinMode(areas[i].pin, OUTPUT);
   }
+  refreshScreen();
+  updatePinsState();
 }
 
 void loop() {
   lcdKey = read_LCD_buttons();
   if (lastPressed != lcdKey) {
     keyPressed(lcdKey);
+    refreshScreen();
+    updatePinsState();
   }
   lastPressed = lcdKey;
-  refreshScreen();
-  updatePinsState();
 }
 
 void keyPressed (int lcdKey) {
@@ -87,6 +96,7 @@ void keyPressed (int lcdKey) {
         break;
       }
     case btnSELECT: {
+        selectedArea = -1;
         break;
       }
     case btnNONE: {
@@ -96,10 +106,16 @@ void keyPressed (int lcdKey) {
 }
 
 void refreshScreen() {
+  lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print(">");
   lcd.setCursor(1, 0);
-  lcd.print(areas[selectedArea].areaName);
+  if (selectedArea >= 0) {
+    lcd.print(areas[selectedArea].areaName);
+  } else {
+    lcd.write("test");
+  }
+
 }
 
 void updatePinsState() {
