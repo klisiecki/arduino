@@ -21,20 +21,19 @@ void setup() {
   ** easily change the number of channels sent here. If you don't
   ** do this, DmxSimple will set the maximum channel number to the
   ** highest channel you DmxSimple.write() to. */
- //DmxSimple.maxChannel(6);
- DmxSimple.write(1, 255);
+  DmxSimple.maxChannel(4);
 }
 
 void loop() {
   int brightness;
-  for (brightness = 0; brightness <= 255; brightness--) {
-    DmxSimple.write(2,100); //Channel 2 to control red light 
-    DmxSimple.write(1,brightness); //Channel 3 to control green light 
-    DmxSimple.write(4,255); //Channel 2 to control blue light 
-    DmxSimple.write(6,brightness); //Channel 6 to control motor
+  /* Simple loop to ramp up brightness */
+  for (brightness = 0; brightness <= 255; brightness++) {
+    
+    /* Update DMX channel 1 to new brightness */
+    DmxSimple.write(1, brightness);
+    
     /* Small delay to slow down the ramping */
-    delay(5);
+    delay(10);
   }
-  
-  
+
 }
