@@ -22,9 +22,9 @@ int more = 5;
 float temp;
 float temp1;
 float temp2;
-float tempSet = 20;
+float tempSet = 26;
 float tempMin = 15;
-float tempMax = 28;
+float tempMax = 32;
  
 void setup() {
   sensors.begin();
