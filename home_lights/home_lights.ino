@@ -19,37 +19,39 @@ struct MyLamp {
   byte state;
 };
 
-MyLamp tobi1 = {PIN_HIGH, 40};
-MyLamp tobi2 = {PIN_HIGH, 41};
+MyLamp tobi1 = {PIN_HIGH, 40, OFF};
+MyLamp tobi2 = {PIN_HIGH, 41, OFF};
 
-MyLamp sypialnia = {PIN_HIGH, 42};
-MyLamp salon1 = {PIN_HIGH, 43};
-MyLamp salon2 = {PIN_HIGH, 44};
-MyLamp stol = {PIN_HIGH, 45};
+MyLamp sypialnia = {PIN_HIGH, 42, OFF};
+MyLamp salon1 = {PIN_HIGH, 43, OFF};
+MyLamp salon2 = {PIN_HIGH, 44, OFF};
+MyLamp stol = {PIN_HIGH, 45, OFF};
 
-MyLamp drzwi = {PIN_LOW, 50};
-MyLamp piwnica = {PIN_LOW, 51};
+MyLamp drzwi = {PIN_LOW, 51, OFF};
+MyLamp piwnica = {PIN_LOW, 52, OFF};
 
-MyLamp korytarz1 = {DMX, 1};
-MyLamp korytarz2 = {DMX, 2};
-MyLamp korytarz3 = {DMX, 3};
+MyLamp korytarz1 = {DMX, 1, ON};
+MyLamp korytarz2 = {DMX, 2, ON};
+MyLamp korytarz3 = {DMX, 3, ON};
 
-MyLamp garderoba1 = {DMX, 4};
-MyLamp garderoba2 = {DMX, 5};
+MyLamp garderoba1 = {DMX, 4, OFF};
+MyLamp garderoba2 = {DMX, 5, OFF};
 
-MyLamp lazienkaUmywalka = {DMX, 7};
-MyLamp lazienkaWanna =    {DMX, 8};
-MyLamp lazienkaReszta =   {DMX, 9};
+MyLamp lazienkaUmywalka = {DMX, 7, OFF};
+MyLamp lazienkaWanna =    {DMX, 8, OFF};
+MyLamp lazienkaReszta =   {DMX, 9, OFF};
 
 MyLamp kuchnia1 = {DMX, 10};
 MyLamp kuchnia2 = {DMX, 11};
 MyLamp kuchnia3 = {DMX, 12};
 
-MyLamp lamps[] = {
-  tobi1, tobi2, sypialnia, salon1, salon2, stol, drzwi, piwnica, 
-  korytarz1, korytarz2, korytarz3, garderoba1, garderoba2,
-  lazienkaUmywalka,lazienkaWanna, lazienkaReszta,
-  kuchnia1, kuchnia2, kuchnia3
+MyLamp kuchniaListwa = {DMX, 13};
+
+MyLamp *lamps[] = {
+  &tobi1, &tobi2, &sypialnia, &salon1, &salon2, &stol, &drzwi, &piwnica,
+  &korytarz1, &korytarz2, &korytarz3, &garderoba1, &garderoba2,
+  &lazienkaUmywalka, &lazienkaWanna, &lazienkaReszta,
+  &kuchnia1, &kuchnia2, &kuchnia3, &kuchniaListwa
 };
 
 const byte lampsCount = (sizeof(lamps) / sizeof(MyLamp));
@@ -57,22 +59,22 @@ const byte lampsCount = (sizeof(lamps) / sizeof(MyLamp));
 struct MyButton {
   const char name[10];
   Button button;
-  MyLamp lamps[5];
+  MyLamp *lamps[5];
 
 } buttons[] = {
-  {"Tobi 1    ", Button(4 ), {tobi1} },
-  {"Tobi 2    ", Button(5 ), {tobi2} },
+  {"Tobi 1    ", Button(4 ), {&tobi1} },
+  {"Tobi 2    ", Button(5 ), {&tobi2} },
 
-  {"Korytarz  ", Button(6 ), {korytarz1, korytarz2, korytarz3}},
-  {"Garderoba ", Button(7 ), {garderoba1, garderoba1} },
-  {"Łazienka  ", Button(9 ), {lazienkaUmywalka, lazienkaWanna, lazienkaReszta,} },
-  {"Kuchnia   ", Button(17), {kuchnia1, kuchnia2, kuchnia3} },
+  {"Korytarz  ", Button(6 ), {&korytarz1, &korytarz2, &korytarz3} },
+  {"Garderoba ", Button(7 ), {&garderoba1, &garderoba1} },
+  {"Łazienka  ", Button(9 ), {&lazienkaUmywalka, &lazienkaWanna, &lazienkaReszta,} },
+  {"Kuchnia   ", Button(17), {&kuchnia1, &kuchnia2, &kuchnia3} },
 
-  {"Sypialnia ", Button(14), {sypialnia}},
-  {"Salon     ", Button(16), {salon1, salon2} },
-  {"Stół      ", Button(15), {stol} },
+  {"Sypialnia ", Button(14), {&sypialnia} },
+  {"Salon     ", Button(16), {&salon1, &salon2} },
+  {"Stół      ", Button(15), {&stol} },
 
-  {"Drzwi     ", Button(A1), {drzwi} },
+  {"Drzwi     ", Button(A1), {&drzwi} },
 
 };
 
@@ -91,7 +93,7 @@ void setup() {
     buttons[i].button.begin();
   }
   for (int i = 0; i < lampsCount; i++) {
-    MyLamp lamp = lamps[i];
+    MyLamp lamp = *lamps[i];
     if (lamp.type == PIN_HIGH or lamp.type == PIN_LOW) {
       pinMode(lamp.channel, OUTPUT);
     }
@@ -119,9 +121,14 @@ void loop() {
 }
 
 void buttonPressed(MyButton *button) {
-  if (DEBUG) Serial.println(*button->name);
-  for (int i = 0; i < countLamps(button); i++) {
-    toggle(button->lamps + i);
+  if (DEBUG) Serial.println("Button pressed");
+  if (DEBUG) Serial.println(button->name);
+  byte lCount = countLamps(button);
+  if (DEBUG) Serial.println("lamps: ");
+  if (DEBUG) Serial.println(lCount);
+
+  for (int i = 0; i < lCount; i++) {
+    toggle(*(button->lamps) + i);
   }
 }
 
@@ -140,30 +147,34 @@ void setState(MyLamp *lamp, byte state) {
       digitalWrite(lamp->channel, state == ON ? HIGH : LOW);
       break;
     case PIN_LOW:
-      digitalWrite(lamp->channel, state == ON ? LOW: HIGH);
+      digitalWrite(lamp->channel, state == ON ? LOW : HIGH);
       break;
     case DMX:
-      DmxSimple.write(lamp->channel, state == ON ? dmxDefault: 0);
+      DmxSimple.write(lamp->channel, state == ON ? dmxDefault : 0);
       break;
-  } 
+  }
 }
 
 
 bool anyLamp(byte state) {
   for (int i = 0; i < lampsCount; i++) {
-    if (lamps[i].state == state) {
+    if (DEBUG) Serial.println("Checking lamp:");
+    if (DEBUG) Serial.println(lamps[i]->channel);
+    if (lamps[i]->state == state) {
+      if (DEBUG) Serial.println("Lamp on: " + i);
       return true;
     }
   }
+  if (DEBUG) Serial.println("All lamps off");
   return false;
 }
 
 void setAll(byte state) {
   for (int i = 0; i < lampsCount; i++) {
-    setState(lamps + i, state);
+    setState(lamps[i], state);
   }
 }
 
 byte countLamps(MyButton *button) {
-  return sizeof(button->lamps) / sizeof(byte);
+  return sizeof(*button->lamps) / sizeof(*button->lamps[0]);
 }
