@@ -25,7 +25,7 @@ MyLamp tobi2 = {PIN_HIGH, 41, OFF};
 MyLamp sypialnia = {PIN_HIGH, 42, OFF};
 MyLamp salon1 = {PIN_HIGH, 43, OFF};
 MyLamp salon2 = {PIN_HIGH, 44, OFF};
-MyLamp stol = {PIN_HIGH, 45, OFF};
+MyLamp stol = {PIN_HIGH, 46, OFF};
 
 MyLamp drzwi = {PIN_LOW, 51, OFF};
 MyLamp piwnica = {PIN_LOW, 52, OFF};
@@ -54,27 +54,28 @@ MyLamp *lamps[] = {
   &kuchnia1, &kuchnia2, &kuchnia3, &kuchniaListwa
 };
 
-const byte lampsCount = (sizeof(lamps) / sizeof(MyLamp));
+const byte lampsCount = (sizeof(lamps) / sizeof(MyLamp*));
 
 struct MyButton {
   const char name[10];
   Button button;
+  byte lampsCount;
   MyLamp *lamps[5];
 
 } buttons[] = {
-  {"Tobi 1    ", Button(4 ), {&tobi1} },
-  {"Tobi 2    ", Button(5 ), {&tobi2} },
+  {"Tobi 1    ", Button(4 ), 1, {&tobi1} },
+  {"Tobi 2    ", Button(5 ), 1, {&tobi2} },
 
-  {"Korytarz  ", Button(6 ), {&korytarz1, &korytarz2, &korytarz3} },
-  {"Garderoba ", Button(7 ), {&garderoba1, &garderoba1} },
-  {"Łazienka  ", Button(9 ), {&lazienkaUmywalka, &lazienkaWanna, &lazienkaReszta,} },
-  {"Kuchnia   ", Button(17), {&kuchnia1, &kuchnia2, &kuchnia3} },
+  {"Korytarz  ", Button(6 ), 3, {&korytarz1, &korytarz2, &korytarz3} },
+  {"Garderoba ", Button(7 ), 2, {&garderoba1, &garderoba2} },
+  {"Łazienka  ", Button(9 ), 3, {&lazienkaUmywalka, &lazienkaWanna, &lazienkaReszta,} },
+  {"Kuchnia   ", Button(17), 3, {&kuchnia1, &kuchnia2, &kuchnia3} },
 
-  {"Sypialnia ", Button(14), {&sypialnia} },
-  {"Salon     ", Button(16), {&salon1, &salon2} },
-  {"Stół      ", Button(15), {&stol} },
+  {"Sypialnia ", Button(14), 1, {&sypialnia} },
+  {"Salon     ", Button(16), 2, {&salon1, &salon2} },
+  {"Stół      ", Button(15), 1, {&stol} },
 
-  {"Drzwi     ", Button(A1), {&drzwi} },
+  {"Drzwi     ", Button(A1), 1, {&drzwi} },
 
 };
 
@@ -84,9 +85,25 @@ int dmxDefault = 255;
 
 Button onOff = Button(A0);
 
+
+void print(String text, byte val) {
+  if (DEBUG) {
+    Serial.print(text);
+    Serial.println(val);
+  }
+}
+
+void print(String text, int val) {
+  if (DEBUG) {
+    Serial.print(text);
+    Serial.println(val);
+  }
+}
+
 void setup() {
   if (DEBUG) {
     Serial.begin(9600);
+    Serial.println("SETUP");
   }
   onOff.begin();
   for (int i = 0; i < buttonsCount; i++) {
@@ -94,7 +111,10 @@ void setup() {
   }
   for (int i = 0; i < lampsCount; i++) {
     MyLamp lamp = *lamps[i];
+    print("Setup lamp: ", i);
+    print(" type: ", lamp.type);
     if (lamp.type == PIN_HIGH or lamp.type == PIN_LOW) {
+      print(" outputPin: ", lamp.channel);
       pinMode(lamp.channel, OUTPUT);
     }
   }
@@ -121,18 +141,20 @@ void loop() {
 }
 
 void buttonPressed(MyButton *button) {
-  if (DEBUG) Serial.println("Button pressed");
+  if (DEBUG) Serial.print("Button pressed: ");
   if (DEBUG) Serial.println(button->name);
-  byte lCount = countLamps(button);
-  if (DEBUG) Serial.println("lamps: ");
-  if (DEBUG) Serial.println(lCount);
+  //byte lCount = countLamps(button);
+  byte lCount = button->lampsCount;
+  print("lamps: ", lCount);
 
   for (int i = 0; i < lCount; i++) {
-    toggle(*(button->lamps) + i);
+    toggle(*((button->lamps) + i));
   }
 }
 
 void toggle(MyLamp *lamp) {
+  print("toggle lamp on channel ", lamp->channel);
+  print("current state is ", lamp->state);
   if (lamp->state == ON) {
     setState(lamp, OFF);
   } else {
@@ -176,5 +198,5 @@ void setAll(byte state) {
 }
 
 byte countLamps(MyButton *button) {
-  return sizeof(*button->lamps) / sizeof(*button->lamps[0]);
+  return sizeof(button->lamps) / sizeof(button->lamps[0]);
 }
