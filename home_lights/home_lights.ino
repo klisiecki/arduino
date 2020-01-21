@@ -3,7 +3,7 @@
 
 #define DEBUG 1
 
-const byte ON = 255;
+const byte ON = 1;
 const byte OFF = 0;
 
 
@@ -30,9 +30,9 @@ MyLamp stol = {PIN_HIGH, 46, OFF};
 MyLamp drzwi = {PIN_LOW, 51, OFF};
 MyLamp piwnica = {PIN_LOW, 52, OFF};
 
-MyLamp korytarz1 = {DMX, 1, ON};
-MyLamp korytarz2 = {DMX, 2, ON};
-MyLamp korytarz3 = {DMX, 3, ON};
+MyLamp korytarz1 = {DMX, 1, OFF};
+MyLamp korytarz2 = {DMX, 2, OFF};
+MyLamp korytarz3 = {DMX, 3, OFF};
 
 MyLamp garderoba1 = {DMX, 4, OFF};
 MyLamp garderoba2 = {DMX, 5, OFF};
@@ -72,20 +72,24 @@ struct MyButton {
   {"Kuchnia   ", Button(17), 3, {&kuchnia1, &kuchnia2, &kuchnia3} },
 
   {"Sypialnia ", Button(14), 1, {&sypialnia} },
+
   {"Salon     ", Button(16), 2, {&salon1, &salon2} },
+  {"Salon 1   ", Button(21), 1, {&salon1} },
+  {"Salon 2   ", Button(23), 1, {&salon2} },
   {"Stół      ", Button(15), 1, {&stol} },
 
   {"Drzwi     ", Button(A1), 1, {&drzwi} },
-
 };
 
 const byte buttonsCount = (sizeof(buttons) / sizeof(MyButton));
 
-int dmxDefault = 255;
+int dmxDefault = 200;
 
 Button onOff = Button(A0);
 
-
+void print(String text) {
+  if (DEBUG) Serial.println(text);
+}
 void print(String text, byte val) {
   if (DEBUG) {
     Serial.print(text);
@@ -141,15 +145,35 @@ void loop() {
 }
 
 void buttonPressed(MyButton *button) {
-  if (DEBUG) Serial.print("Button pressed: ");
-  if (DEBUG) Serial.println(button->name);
+  print("Button pressed: " + (String) button->name);
+  //  print();
   //byte lCount = countLamps(button);
   byte lCount = button->lampsCount;
   print("lamps: ", lCount);
 
-  for (int i = 0; i < lCount; i++) {
-    toggle(*((button->lamps) + i));
+  if (anyLamp(button, ON)) {
+    setAll(button, OFF);
+  } else {
+    setAll(button, ON);
   }
+
+}
+
+void setAll(MyButton *button, byte state) {
+  for (int i = 0; i < button->lampsCount; i++) {
+    MyLamp *lamp = *(button->lamps + i);
+    setState(lamp, state);
+  }
+}
+
+bool anyLamp(MyButton *button, byte state) {
+  for (int i = 0; i < button->lampsCount; i++) {
+    MyLamp *lamp = *(button->lamps + i);
+    if (lamp->state == state) {
+      return true;
+    }
+  }
+  return false;
 }
 
 void toggle(MyLamp *lamp) {
@@ -178,16 +202,16 @@ void setState(MyLamp *lamp, byte state) {
 }
 
 
+
 bool anyLamp(byte state) {
+  print("Checking all lamps");
   for (int i = 0; i < lampsCount; i++) {
-    if (DEBUG) Serial.println("Checking lamp:");
-    if (DEBUG) Serial.println(lamps[i]->channel);
     if (lamps[i]->state == state) {
-      if (DEBUG) Serial.println("Lamp on: " + i);
+      print("Lamp on: ", i);
       return true;
     }
   }
-  if (DEBUG) Serial.println("All lamps off");
+  print("All lamps off");
   return false;
 }
 
@@ -195,8 +219,4 @@ void setAll(byte state) {
   for (int i = 0; i < lampsCount; i++) {
     setState(lamps[i], state);
   }
-}
-
-byte countLamps(MyButton *button) {
-  return sizeof(button->lamps) / sizeof(button->lamps[0]);
 }
