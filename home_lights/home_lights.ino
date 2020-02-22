@@ -60,13 +60,21 @@ struct MyButton {
   const char name[10];
   Button button;
   byte lampsCount;
-  MyLamp *lamps[5];
+  MyLamp *lamps[10];
 
 } buttons[] = {
+
+  {"Wspólny   ", Button(29), 9, {&korytarz1, &korytarz2, &korytarz3, &kuchnia1, &kuchnia2, &kuchnia3, &salon1, &salon2, &stol} },
+
+  
   {"Tobi 1    ", Button(4 ), 1, {&tobi1} },
   {"Tobi 2    ", Button(5 ), 1, {&tobi2} },
 
   {"Korytarz  ", Button(6 ), 3, {&korytarz1, &korytarz2, &korytarz3} },
+
+  {"Korytarz 1", Button(20), 1, {&korytarz1} },
+  {"Korytarz 2", Button(22), 2, {&korytarz2, &korytarz3} },
+
   {"Garderoba ", Button(7 ), 2, {&garderoba1, &garderoba2} },
   {"Łazienka  ", Button(9 ), 3, {&lazienkaUmywalka, &lazienkaWanna, &lazienkaReszta,} },
   {"Kuchnia   ", Button(17), 3, {&kuchnia1, &kuchnia2, &kuchnia3} },
