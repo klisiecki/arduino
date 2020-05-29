@@ -6,11 +6,14 @@
 const byte ON = 1;
 const byte OFF = 0;
 
+int dmxDefault = 200;
+int dmxNight = 3;
 
 enum LampType {
   PIN_LOW,
   PIN_HIGH,
-  DMX
+  DMX,
+  DMX_NIGHT //set to 3/255 when turned off
 };
 
 struct MyLamp {
@@ -28,29 +31,31 @@ MyLamp salon2 = {PIN_HIGH, 44, OFF};
 MyLamp stol = {PIN_HIGH, 46, OFF};
 
 MyLamp drzwi = {PIN_LOW, 51, OFF};
-MyLamp piwnica = {PIN_LOW, 52, OFF};
+MyLamp piwnica = {PIN_LOW, 50, OFF}; //spalony
 
-MyLamp korytarz1 = {DMX, 1, OFF};
-MyLamp korytarz2 = {DMX, 2, OFF};
-MyLamp korytarz3 = {DMX, 3, OFF};
+MyLamp korytarz1 = {DMX_NIGHT, 1, ON};
+MyLamp korytarz2 = {DMX_NIGHT, 2, ON};
+MyLamp korytarz3 = {DMX_NIGHT, 3, ON};
 
 MyLamp garderoba1 = {DMX, 4, OFF};
 MyLamp garderoba2 = {DMX, 5, OFF};
 
-MyLamp lazienkaUmywalka = {DMX, 7, OFF};
-MyLamp lazienkaWanna =    {DMX, 8, OFF};
-MyLamp lazienkaReszta =   {DMX, 9, OFF};
+MyLamp lazienkaUmywalka = {DMX_NIGHT, 7, OFF};
+MyLamp lazienkaWanna =    {DMX_NIGHT, 8, OFF};
+MyLamp lazienkaReszta =   {DMX_NIGHT, 9, OFF};
+MyLamp lazienkaLustro = {PIN_LOW, 52, OFF};
 
-MyLamp kuchnia1 = {DMX, 10};
-MyLamp kuchnia2 = {DMX, 11};
-MyLamp kuchnia3 = {DMX, 12};
+
+MyLamp kuchnia1 = {DMX_NIGHT, 10};
+MyLamp kuchnia2 = {DMX_NIGHT, 11};
+MyLamp kuchnia3 = {DMX_NIGHT, 12};
 
 MyLamp kuchniaListwa = {DMX, 13};
 
 MyLamp *lamps[] = {
   &tobi1, &tobi2, &sypialnia, &salon1, &salon2, &stol, &drzwi, &piwnica,
   &korytarz1, &korytarz2, &korytarz3, &garderoba1, &garderoba2,
-  &lazienkaUmywalka, &lazienkaWanna, &lazienkaReszta,
+  &lazienkaUmywalka, &lazienkaWanna, &lazienkaReszta, &lazienkaLustro,
   &kuchnia1, &kuchnia2, &kuchnia3, &kuchniaListwa
 };
 
@@ -61,11 +66,9 @@ struct MyButton {
   Button button;
   byte lampsCount;
   MyLamp *lamps[10];
-
 } buttons[] = {
 
   {"Wspólny   ", Button(29), 9, {&korytarz1, &korytarz2, &korytarz3, &kuchnia1, &kuchnia2, &kuchnia3, &salon1, &salon2, &stol} },
-
   
   {"Tobi 1    ", Button(4 ), 1, {&tobi1} },
   {"Tobi 2    ", Button(5 ), 1, {&tobi2} },
@@ -76,7 +79,9 @@ struct MyButton {
   {"Korytarz 2", Button(22), 2, {&korytarz2, &korytarz3} },
 
   {"Garderoba ", Button(7 ), 2, {&garderoba1, &garderoba2} },
-  {"Łazienka  ", Button(9 ), 3, {&lazienkaUmywalka, &lazienkaWanna, &lazienkaReszta,} },
+  {"Łazienka  ", Button(9 ), 3, {&lazienkaUmywalka, &lazienkaWanna, &lazienkaReszta} },
+  {"ŁazienkaL ", Button(11), 1, {&lazienkaLustro} },
+
   {"Kuchnia   ", Button(17), 3, {&kuchnia1, &kuchnia2, &kuchnia3} },
 
   {"Sypialnia ", Button(14), 1, {&sypialnia} },
@@ -91,26 +96,8 @@ struct MyButton {
 
 const byte buttonsCount = (sizeof(buttons) / sizeof(MyButton));
 
-int dmxDefault = 200;
 
 Button onOff = Button(A0);
-
-void print(String text) {
-  if (DEBUG) Serial.println(text);
-}
-void print(String text, byte val) {
-  if (DEBUG) {
-    Serial.print(text);
-    Serial.println(val);
-  }
-}
-
-void print(String text, int val) {
-  if (DEBUG) {
-    Serial.print(text);
-    Serial.println(val);
-  }
-}
 
 void setup() {
   if (DEBUG) {
@@ -129,6 +116,7 @@ void setup() {
       print(" outputPin: ", lamp.channel);
       pinMode(lamp.channel, OUTPUT);
     }
+    setState(&lamp, lamp.state);
   }
   DmxSimple.usePin(3);
   DmxSimple.write(1, 0);
@@ -206,10 +194,11 @@ void setState(MyLamp *lamp, byte state) {
     case DMX:
       DmxSimple.write(lamp->channel, state == ON ? dmxDefault : 0);
       break;
+    case DMX_NIGHT:
+      DmxSimple.write(lamp->channel, state == ON ? dmxDefault : dmxNight);
+      break;
   }
 }
-
-
 
 bool anyLamp(byte state) {
   print("Checking all lamps");
@@ -226,5 +215,22 @@ bool anyLamp(byte state) {
 void setAll(byte state) {
   for (int i = 0; i < lampsCount; i++) {
     setState(lamps[i], state);
+  }
+}
+
+void print(String text) {
+  if (DEBUG) Serial.println(text);
+}
+void print(String text, byte val) {
+  if (DEBUG) {
+    Serial.print(text);
+    Serial.println(val);
+  }
+}
+
+void print(String text, int val) {
+  if (DEBUG) {
+    Serial.print(text);
+    Serial.println(val);
   }
 }
