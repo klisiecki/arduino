@@ -5,52 +5,51 @@
 
 #define DEBUG 1
 
-const byte ON = 1;
-const byte OFF = 0;
+const byte STANDBY = 0;
+const byte PRESSED = 1;
+const byte DIMMING = 2;
 
-int dmxDefault = 200;
-int dmxNight = 3;
+byte dmxDefault = 200;
+byte dmxNight = 3;
 
 enum LampType {
   PIN_LOW,
   PIN_HIGH,
   DMX,
-  DMX_NIGHT //set to 3/255 when turned off
 };
 
 struct MyLamp {
   LampType type;
   byte channel;
-  byte state;
+  byte brightness;
 };
 
-MyLamp tobi1 = {PIN_HIGH, 40, OFF};
-MyLamp tobi2 = {PIN_HIGH, 41, OFF};
+MyLamp tobi1 = {PIN_HIGH, 40};
+MyLamp tobi2 = {PIN_HIGH, 41};
 
-MyLamp sypialnia = {PIN_HIGH, 42, OFF};
-MyLamp salon1 = {PIN_HIGH, 43, OFF};
-MyLamp salon2 = {PIN_HIGH, 44, OFF};
-MyLamp stol = {PIN_HIGH, 46, OFF};
+MyLamp sypialnia = {PIN_HIGH, 42};
+MyLamp salon1 = {PIN_HIGH, 43};
+MyLamp salon2 = {PIN_HIGH, 44};
+MyLamp stol = {PIN_HIGH, 46};
 
-MyLamp drzwi = {PIN_LOW, 51, OFF};
-MyLamp piwnica = {PIN_LOW, 50, OFF}; //spalony
+MyLamp drzwi = {PIN_LOW, 51};
+MyLamp piwnica = {PIN_LOW, 50}; //spalony
 
-MyLamp korytarz1 = {DMX_NIGHT, 1, ON};
-MyLamp korytarz2 = {DMX_NIGHT, 2, ON};
-MyLamp korytarz3 = {DMX_NIGHT, 3, ON};
+MyLamp korytarz1 = {DMX, 1};
+MyLamp korytarz2 = {DMX, 2};
+MyLamp korytarz3 = {DMX, 3};
 
-MyLamp garderoba1 = {DMX, 4, OFF};
-MyLamp garderoba2 = {DMX, 5, OFF};
+MyLamp garderoba1 = {DMX, 4};
+MyLamp garderoba2 = {DMX, 5};
 
-MyLamp lazienkaUmywalka = {DMX_NIGHT, 7, OFF};
-MyLamp lazienkaWanna =    {DMX_NIGHT, 8, OFF};
-MyLamp lazienkaReszta =   {DMX_NIGHT, 9, OFF};
-MyLamp lazienkaLustro = {PIN_LOW, 52, OFF};
+MyLamp lazienkaUmywalka = {DMX, 7};
+MyLamp lazienkaWanna =    {DMX, 8};
+MyLamp lazienkaReszta =   {DMX, 9};
+MyLamp lazienkaLustro = {PIN_LOW, 52};
 
-
-MyLamp kuchnia1 = {DMX_NIGHT, 10};
-MyLamp kuchnia2 = {DMX_NIGHT, 11};
-MyLamp kuchnia3 = {DMX_NIGHT, 12};
+MyLamp kuchnia1 = {DMX, 10};
+MyLamp kuchnia2 = {DMX, 11};
+MyLamp kuchnia3 = {DMX, 12};
 
 MyLamp kuchniaListwa = {DMX, 13};
 
@@ -63,12 +62,14 @@ MyLamp *lamps[] = {
 
 const byte lampsCount = (sizeof(lamps) / sizeof(MyLamp*));
 const unsigned long dbTime = 50;
+const unsigned long pressTime = 100;
 
 struct MyButton {
   const char name[10];
   Button button;
   byte lampsCount;
   MyLamp *lamps[10];
+  byte state;
 } buttons[] = {
 
   {"Wspólny   ", Button(29, dbTime), 9, {&korytarz1, &korytarz2, &korytarz3, &kuchnia1, &kuchnia2, &kuchnia3, &salon1, &salon2, &stol} },
@@ -99,9 +100,6 @@ struct MyButton {
 
 const byte buttonsCount = (sizeof(buttons) / sizeof(MyButton));
 
-
-Button onOff = Button(A0);
-
 void print(String text, int val) {
   if (DEBUG) {
     Serial.print(text);
@@ -113,57 +111,46 @@ void print(String text) {
   if (DEBUG) Serial.println(text);
 }
 
-void setState(MyLamp *lamp, byte state) {
-  lamp->state = state;
+void setBrightness(MyLamp *lamp, byte brightness) {
+  lamp->brightness = brightness;
   switch (lamp->type) {
     case PIN_HIGH:
-      digitalWrite(lamp->channel, state == ON ? HIGH : LOW);
+      digitalWrite(lamp->channel, brightness == 0 ? LOW : HIGH);
       break;
     case PIN_LOW:
-      digitalWrite(lamp->channel, state == ON ? LOW : HIGH);
+      digitalWrite(lamp->channel, brightness == 0 ? HIGH : LOW);
       break;
     case DMX:
-      DmxSimple.write(lamp->channel, state == ON ? dmxDefault : 0);
-      break;
-    case DMX_NIGHT:
-      DmxSimple.write(lamp->channel, state == ON ? dmxDefault : dmxNight);
+      DmxSimple.write(lamp->channel, brightness);
       break;
   }
 }
 
-void setAll(MyButton *button, byte state) {
+void setAll(MyButton *button, byte brightness) {
   for (int i = 0; i < button->lampsCount; i++) {
     MyLamp *lamp = *(button->lamps + i);
-    setState(lamp, state);
+    setBrightness(lamp, brightness);
   }
 }
 
-void setAll(byte state) {
-  for (int i = 0; i < lampsCount; i++) {
-    setState(lamps[i], state);
-  }
-}
-
-bool anyLamp(MyButton *button, byte state) {
+bool allOff(MyButton *button) {
   for (int i = 0; i < button->lampsCount; i++) {
     MyLamp *lamp = *(button->lamps + i);
-    if (lamp->state == state) {
-      return true;
+    if (lamp->brightness > 0) {
+      return false;
     }
   }
-  return false;
+  return true;
 }
 
-bool anyLamp(byte state) {
-  print("Checking all lamps");
-  for (int i = 0; i < lampsCount; i++) {
-    if (lamps[i]->state == state) {
-      print("Lamp on: ", i);
-      return true;
+bool isDimmable(MyButton *button) {
+  for (int i = 0; i < button->lampsCount; i++) {
+    MyLamp *lamp = *(button->lamps + i);
+    if (lamp->type != DMX) {
+      return false;
     }
   }
-  print("All lamps off");
-  return false;
+  return true;
 }
 
 void buttonPressed(MyButton *button) {
@@ -185,9 +172,11 @@ void setup() {
     Serial.begin(9600);
     Serial.println("SETUP");
   }
-  onOff.begin();
   for (int i = 0; i < buttonsCount; i++) {
-    buttons[i].button.begin();
+    MyButton button = *buttons[i]
+    button->button.begin();
+    button->state = STANDBY;
+    
   }
   for (int i = 0; i < lampsCount; i++) {
     MyLamp lamp = *lamps[i];
@@ -197,7 +186,8 @@ void setup() {
       print(" outputPin: ", lamp.channel);
       pinMode(lamp.channel, OUTPUT);
     }
-    setState(&lamp, lamp.state);
+    lamp->brightness = 0;
+    setBrightness(&lamp, OFF);
   }
   DmxSimple.usePin(3);
   DmxSimple.write(1, 0);
@@ -205,18 +195,30 @@ void setup() {
 
 void loop() {
   for (int i = 0; i < buttonsCount; i++) {
-    buttons[i].button.read();
+    MyButton myButton = *buttons[i]
+    Button button = myButton->button;
+    button.read();
+    switch (myButton.state) {
+      case STANDBY:
+        if (button.pressedFor(pressTime)) {
+          myButton->state = PRESSED;
+        }
+        break;
+      case PRESSED:
+        if (button.wasReleased()) {
+          //toggle
+          myButton->state = STANDBY;
+        }
+        break;
+
+      case DIMMING:
+
+        break;
+
+    }
     if (buttons[i].button.wasReleased()) {
       buttonPressed(&buttons[i]);
     }
   }
-  onOff.read();
-  if (onOff.wasReleased()) {
-    if (DEBUG) Serial.println("onOff");
-    if (anyLamp(ON)) {
-      setAll(false);
-    } else {
-      setAll(true);
-    }
-  }
+
 }
