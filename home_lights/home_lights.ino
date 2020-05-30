@@ -60,6 +60,7 @@ MyLamp *lamps[] = {
 };
 
 const byte lampsCount = (sizeof(lamps) / sizeof(MyLamp*));
+const unsigned long dbTime = 50;
 
 struct MyButton {
   const char name[10];
@@ -68,28 +69,28 @@ struct MyButton {
   MyLamp *lamps[10];
 } buttons[] = {
 
-  {"Wspólny   ", Button(29), 9, {&korytarz1, &korytarz2, &korytarz3, &kuchnia1, &kuchnia2, &kuchnia3, &salon1, &salon2, &stol} },
+  {"Wspólny   ", Button(29, dbTime), 9, {&korytarz1, &korytarz2, &korytarz3, &kuchnia1, &kuchnia2, &kuchnia3, &salon1, &salon2, &stol} },
   
-  {"Tobi 1    ", Button(4 ), 1, {&tobi1} },
-  {"Tobi 2    ", Button(5 ), 1, {&tobi2} },
+  {"Tobi 1    ", Button(4 , dbTime), 1, {&tobi1} },
+  {"Tobi 2    ", Button(5 , dbTime), 1, {&tobi2} },
 
-  {"Korytarz  ", Button(6 ), 3, {&korytarz1, &korytarz2, &korytarz3} },
+  {"Korytarz  ", Button(6 , dbTime), 3, {&korytarz1, &korytarz2, &korytarz3} },
 
-  {"Korytarz 1", Button(20), 1, {&korytarz1} },
-  {"Korytarz 2", Button(22), 2, {&korytarz2, &korytarz3} },
+  {"Korytarz 1", Button(20, dbTime), 1, {&korytarz1} },
+  {"Korytarz 2", Button(22, dbTime), 2, {&korytarz2, &korytarz3} },
 
-  {"Garderoba ", Button(7 ), 2, {&garderoba1, &garderoba2} },
-  {"Łazienka  ", Button(9 ), 3, {&lazienkaUmywalka, &lazienkaWanna, &lazienkaReszta} },
-  {"ŁazienkaL ", Button(11), 1, {&lazienkaLustro} },
+  {"Garderoba ", Button(7 , dbTime), 2, {&garderoba1, &garderoba2} },
+  {"Łazienka  ", Button(9 , dbTime), 3, {&lazienkaUmywalka, &lazienkaWanna, &lazienkaReszta} },
+  {"ŁazienkaL ", Button(11, dbTime), 1, {&lazienkaLustro} },
 
-  {"Kuchnia   ", Button(17), 3, {&kuchnia1, &kuchnia2, &kuchnia3} },
+  {"Kuchnia   ", Button(17, dbTime), 3, {&kuchnia1, &kuchnia2, &kuchnia3} },
 
-  {"Sypialnia ", Button(14), 1, {&sypialnia} },
+  {"Sypialnia ", Button(14, dbTime), 1, {&sypialnia} },
 
-  {"Salon     ", Button(16), 2, {&salon1, &salon2} },
-  {"Salon 1   ", Button(21), 1, {&salon1} },
-  {"Salon 2   ", Button(23), 1, {&salon2} },
-  {"Stół      ", Button(15), 1, {&stol} },
+  {"Salon     ", Button(16, dbTime), 2, {&salon1, &salon2} },
+  {"Salon 1   ", Button(21, dbTime), 1, {&salon1} },
+  {"Salon 2   ", Button(23, dbTime), 1, {&salon2} },
+  {"Stół      ", Button(15, dbTime), 1, {&stol} },
 
   {"Drzwi     ", Button(A1), 1, {&drzwi} },
 };
