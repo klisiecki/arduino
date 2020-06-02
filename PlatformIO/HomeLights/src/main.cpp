@@ -63,10 +63,10 @@ const byte lampsCount = (sizeof(lamps) / sizeof(MyLamp*));
 byte dmxDefault = 200;
 byte dmxNight = 3;
 
-const unsigned long dbTime = 50;
-const unsigned long pressTime = 50;
+const unsigned long dbTime = 25;
+const unsigned long pressTime = 40;
 
-const byte dimStep = 50;
+const byte dimStep = 25;
 const unsigned long dimmInitialTime = 1000;
 const unsigned long dimmStepTime = 500;
 
@@ -254,7 +254,7 @@ void loop() {
 
     switch (myButton->state) {
       case STANDBY:
-        if (button->pressedFor(pressTime)) {
+        if (button->wasPressed()) {
           setState(myButton, PRESSED);
         }
         break;
