@@ -3,7 +3,7 @@
 #include <DmxSimple.h>
 #include <JC_Button.h>
 
-#define DEBUG 1
+#define DEBUG 0
 
 const byte STANDBY = 0;
 const byte PRESSED = 1;
@@ -60,13 +60,13 @@ MyLamp *lamps[] = {
 
 const byte lampsCount = (sizeof(lamps) / sizeof(MyLamp*));
 
-byte dmxDefault = 200;
+byte dmxDefault = 255;
 byte dmxNight = 3;
 
 const unsigned long dbTime = 25;
-const unsigned long pressTime = 40;
+// const unsigned long pressTime = 40;
 
-const byte dimStep = 25;
+const byte dimStep = 30;
 const unsigned long dimmInitialTime = 1000;
 const unsigned long dimmStepTime = 500;
 
@@ -265,6 +265,7 @@ void loop() {
         }
         if (button->pressedFor(dimmInitialTime) and isDimmable(myButton)) {
           myButton->pressedFor = dimmInitialTime;
+          myButton->dimmingUp = false;
           setState(myButton, DIMMING);
         }
         break;
