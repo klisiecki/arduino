@@ -25,6 +25,9 @@ MyLamp tobi1 = {PIN_HIGH, 40};
 MyLamp tobi2 = {PIN_HIGH, 41};
 
 MyLamp sypialnia = {PIN_HIGH, 42};
+MyLamp lozkoL = {DMX, 16};
+MyLamp lozkoP = {DMX, 17};
+
 MyLamp salon1 = {PIN_HIGH, 43};
 MyLamp salon2 = {PIN_HIGH, 44};
 MyLamp stol = {PIN_HIGH, 46};
@@ -51,7 +54,9 @@ MyLamp kuchnia3 = {DMX, 12};
 // MyLamp kuchniaListwa = {DMX, 13};
 
 MyLamp *lamps[] = {
-  &tobi1, &tobi2, &sypialnia, &salon1, &salon2, &stol, &drzwi, &piwnica,
+  &tobi1, &tobi2, 
+  &sypialnia, &lozkoL, &lozkoP,
+  &salon1, &salon2, &stol, &drzwi, &piwnica,
   &korytarz1, &korytarz2, &korytarz3, &garderoba1, &garderoba2,
   &lazienkaUmywalka, &lazienkaWanna, &lazienkaReszta, &lazienkaLustro,
   &kuchnia1, &kuchnia2, &kuchnia3
@@ -63,11 +68,11 @@ const byte lampsCount = (sizeof(lamps) / sizeof(MyLamp*));
 byte dmxDefault = 255;
 byte dmxNight = 3;
 
-const unsigned long dbTime = 25;
+const unsigned long dbTime = 20;
 // const unsigned long pressTime = 40;
 
 const byte dimStep = 30;
-const unsigned long dimmInitialTime = 1000;
+const unsigned long dimmInitialTime = 600;
 const unsigned long dimmStepTime = 500;
 
 
@@ -99,6 +104,7 @@ struct MyButton {
   {"Kuchnia  ", Button(17, dbTime), 3, {&kuchnia1, &kuchnia2, &kuchnia3} },
 
   {"Sypialnia", Button(14, dbTime), 1, {&sypialnia} },
+  {"Lozko wsp", Button(12, dbTime), 2, {&lozkoL, &lozkoP} },
 
   {"Salon    ", Button(16, dbTime), 2, {&salon1, &salon2} },
   {"Salon1   ", Button(21, dbTime), 1, {&salon1} },
