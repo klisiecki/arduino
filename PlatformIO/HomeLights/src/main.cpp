@@ -1,5 +1,9 @@
 #include <Arduino.h>
 
+#define VER 0.5.1
+#define MY_GATEWAY_SERIAL
+
+#include <MySensors.h>
 #include <DmxSimple.h>
 #include <JC_Button.h>
 
@@ -19,37 +23,38 @@ struct MyLamp {
   LampType type;
   byte channel;
   byte brightness;
+  MyMessage message;
 };
 
-MyLamp tobi1 = {PIN_HIGH, 40};
-MyLamp tobi2 = {PIN_HIGH, 41};
+MyLamp tobi1 = {PIN_HIGH, 40}; //0
+MyLamp tobi2 = {PIN_HIGH, 41}; //1
 
-MyLamp sypialnia = {PIN_HIGH, 42};
-MyLamp lozkoL = {DMX, 16};
-MyLamp lozkoP = {DMX, 17};
+MyLamp sypialnia = {PIN_HIGH, 42}; //2
+MyLamp lozkoL = {DMX, 16}; //3
+MyLamp lozkoP = {DMX, 17}; //4
 
-MyLamp salon1 = {PIN_HIGH, 43};
-MyLamp salon2 = {PIN_HIGH, 44};
-MyLamp stol = {PIN_HIGH, 46};
+MyLamp salon1 = {PIN_HIGH, 43}; //5
+MyLamp salon2 = {PIN_HIGH, 44};//6
+MyLamp stol = {PIN_HIGH, 46}; //7
 
-MyLamp drzwi = {PIN_LOW, 51};
-MyLamp piwnica = {PIN_LOW, 50}; //spalony
+MyLamp drzwi = {PIN_LOW, 51}; //8
+MyLamp piwnica = {PIN_LOW, 50}; //9, spalony
 
-MyLamp korytarz1 = {DMX, 1};
-MyLamp korytarz2 = {DMX, 2};
-MyLamp korytarz3 = {DMX, 3};
+MyLamp korytarz1 = {DMX, 1}; //10
+MyLamp korytarz2 = {DMX, 2}; //11
+MyLamp korytarz3 = {DMX, 3}; //12
 
-MyLamp garderoba1 = {DMX, 4};
-MyLamp garderoba2 = {DMX, 5};
+MyLamp garderoba1 = {DMX, 4}; //13
+MyLamp garderoba2 = {DMX, 5}; //14
 
-MyLamp lazienkaUmywalka = {DMX, 7};
-MyLamp lazienkaWanna =    {DMX, 8};
-MyLamp lazienkaReszta =   {DMX, 9};
-MyLamp lazienkaLustro = {PIN_LOW, 52};
+MyLamp lazienkaUmywalka = {DMX, 7}; //15
+MyLamp lazienkaWanna =    {DMX, 8}; //16
+MyLamp lazienkaReszta =   {DMX, 9}; //17
+MyLamp lazienkaLustro = {PIN_LOW, 52}; //18
 
-MyLamp kuchnia1 = {DMX, 10};
-MyLamp kuchnia2 = {DMX, 11};
-MyLamp kuchnia3 = {DMX, 12};
+MyLamp kuchnia1 = {DMX, 10}; //19
+MyLamp kuchnia2 = {DMX, 11}; //20
+MyLamp kuchnia3 = {DMX, 12}; //21
 
 // MyLamp kuchniaListwa = {DMX, 13};
 
@@ -68,8 +73,8 @@ const byte lampsCount = (sizeof(lamps) / sizeof(MyLamp*));
 byte dmxDefault = 255;
 byte dmxNight = 3;
 
-const unsigned long dbTime = 20;
-// const unsigned long pressTime = 40;
+const unsigned long dbTime = 25;
+const unsigned long pressTime = 40;
 
 const byte dimStep = 30;
 const unsigned long dimmInitialTime = 600;
@@ -141,12 +146,15 @@ void setBrightness(MyLamp *lamp, byte brightness) {
   switch (lamp->type) {
     case PIN_HIGH:
       digitalWrite(lamp->channel, brightness <= dmxNight ? LOW : HIGH);
+      send(lamp->message.set(brightness <= dmxNight ? 0 : 1));
       break;
     case PIN_LOW:
       digitalWrite(lamp->channel, brightness <= dmxNight ? HIGH : LOW);
+      send(lamp->message.set(brightness <= dmxNight ? 0 : 1));
       break;
     case DMX:
       DmxSimple.write(lamp->channel, brightness);
+      send(lamp->message.set(map(brightness, 0, 255, 0, 100)));
       break;
   }
 }
@@ -216,13 +224,23 @@ void changeBrightness(MyButton *button) {
   setAll(button, brightness);
 }
 
+void presentation() {
+  sendSketchInfo("HomeLights", "0.0.1");
+  for (int i = 0; i < lampsCount; i++) {
+    MyLamp *lamp = lamps[i];
+    if (lamp->type == PIN_HIGH or lamp->type == PIN_LOW) {
+      present(i, S_LIGHT);
+    } else {
+      present(i, S_DIMMER);
+    }
+  }
+}
+
 void setup() {
   pinMode(13, OUTPUT);
   //analogWrite(13,40);
-  if (DEBUG) {
-    Serial.begin(9600);
-    Serial.println("SETUP");
-  }
+  //Serial.begin(115200);
+  //Serial.println("START");
   for (int i = 0; i < buttonsCount; i++) {
     print("Setup button: ", i);
     buttons[i] = &buttonsArr[i];
@@ -238,12 +256,16 @@ void setup() {
     if (lamp->type == PIN_HIGH or lamp->type == PIN_LOW) {
       print(" outputPin: ", lamp->channel);
       pinMode(lamp->channel, OUTPUT);
+      lamp->message = MyMessage(i, V_LIGHT);
+    } else {
+      lamp->message = MyMessage(i, V_DIMMER);
     }
     lamp->brightness = 0;
     setBrightness(lamp, 0);
   }
   DmxSimple.usePin(3);
   DmxSimple.write(1, 0);
+  delay(5000);
 }
 
 void setState(MyButton *button, byte state) {
@@ -252,7 +274,6 @@ void setState(MyButton *button, byte state) {
 }
 
 void loop() {
-  delay(200);
   for (int i = 0; i < buttonsCount; i++) {
     MyButton *myButton = buttons[i];
     Button *button = &(myButton->button);
@@ -260,7 +281,7 @@ void loop() {
 
     switch (myButton->state) {
       case STANDBY:
-        if (button->wasPressed()) {
+        if (button->pressedFor(pressTime)) {
           setState(myButton, PRESSED);
         }
         break;
@@ -285,5 +306,19 @@ void loop() {
         }
         break;
     }
+  }
+}
+
+void receive(const MyMessage &message) {
+  if (message.getType() == V_LIGHT) {
+   	int state= atoi( message.data );
+    if (state == 0) {
+      setBrightness(lamps[message.sensor], dmxNight);
+    } else {
+      setBrightness(lamps[message.sensor], dmxDefault);
+    }
+	} else if (message.getType() == V_DIMMER) {
+		int value = atoi(message.data);
+    setBrightness(lamps[message.sensor], map(value, 0, 100, 0, 255));
   }
 }
