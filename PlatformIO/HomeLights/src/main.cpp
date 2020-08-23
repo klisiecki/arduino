@@ -1,6 +1,6 @@
 #include <Arduino.h>
 
-#define VER 0.5.1
+#define VER 0.6.0
 #define MY_GATEWAY_SERIAL
 
 #include <MySensors.h>
@@ -56,6 +56,10 @@ MyLamp kuchnia1 = {DMX, 10}; //19
 MyLamp kuchnia2 = {DMX, 11}; //20
 MyLamp kuchnia3 = {DMX, 12}; //21
 
+MyLamp kinkietL = {DMX, 19}; //22
+MyLamp kinkietP = {DMX, 20}; //23
+
+
 // MyLamp kuchniaListwa = {DMX, 13};
 
 MyLamp *lamps[] = {
@@ -64,7 +68,7 @@ MyLamp *lamps[] = {
   &salon1, &salon2, &stol, &drzwi, &piwnica,
   &korytarz1, &korytarz2, &korytarz3, &garderoba1, &garderoba2,
   &lazienkaUmywalka, &lazienkaWanna, &lazienkaReszta, &lazienkaLustro,
-  &kuchnia1, &kuchnia2, &kuchnia3
+  &kuchnia1, &kuchnia2, &kuchnia3, &kinkietL, &kinkietP
   // , &kuchniaListwa
 };
 
@@ -85,14 +89,14 @@ struct MyButton {
   const char name[10];
   Button button;
   byte lampsCount;
-  MyLamp *lamps[10];
+  MyLamp *lamps[12];
   byte state;
   unsigned long pressedFor;
   bool dimmingUp;
 
 } buttonsArr[] = {
 
-  {"Wspolny  ", Button(29, dbTime), 9, {&korytarz1, &korytarz2, &korytarz3, &kuchnia1, &kuchnia2, &kuchnia3, &salon1, &salon2, &stol} },
+  {"Wspolny  ", Button(29, dbTime), 11, {&korytarz1, &korytarz2, &korytarz3, &kuchnia1, &kuchnia2, &kuchnia3, &salon1, &salon2, &kinkietL, &kinkietP, &stol} },
   
   {"Tobi1    ", Button(4 , dbTime), 1, {&tobi1} },
   {"Tobi2    ", Button(5 , dbTime), 1, {&tobi2} },
@@ -154,7 +158,8 @@ void setBrightness(MyLamp *lamp, byte brightness) {
       break;
     case DMX:
       DmxSimple.write(lamp->channel, brightness);
-      send(lamp->message.set(map(brightness, 0, 255, 0, 100)));
+      int value = floor(brightness / 2.55);
+      send(lamp->message.set(value));
       break;
   }
 }
@@ -315,10 +320,10 @@ void receive(const MyMessage &message) {
     if (state == 0) {
       setBrightness(lamps[message.sensor], dmxNight);
     } else {
-      setBrightness(lamps[message.sensor], dmxDefault);
+      setBrightness(lamps[message.sensor], 255);
     }
 	} else if (message.getType() == V_DIMMER) {
 		int value = atoi(message.data);
-    setBrightness(lamps[message.sensor], map(value, 0, 100, 0, 255));
+    setBrightness(lamps[message.sensor], ceil(value * 2.55));
   }
 }
