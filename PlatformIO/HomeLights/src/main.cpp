@@ -1,6 +1,6 @@
 #include <Arduino.h>
 
-#define VER 0.6.0
+#define VER "0.6.1"
 #define MY_GATEWAY_SERIAL
 
 #include <MySensors.h>
@@ -74,8 +74,11 @@ MyLamp *lamps[] = {
 
 const byte lampsCount = (sizeof(lamps) / sizeof(MyLamp*));
 
-byte dmxDefault = 255;
-byte dmxNight = 3;
+byte onBrightness = 255;
+byte offBrightness = 0;
+
+const byte ON_BRIGTHTNESS_ID = 50;
+const byte OFF_BRIGTHTNESS_ID = 51;
 
 const unsigned long dbTime = 25;
 const unsigned long pressTime = 40;
@@ -149,12 +152,12 @@ void setBrightness(MyLamp *lamp, byte brightness) {
   lamp->brightness = brightness;
   switch (lamp->type) {
     case PIN_HIGH:
-      digitalWrite(lamp->channel, brightness <= dmxNight ? LOW : HIGH);
-      send(lamp->message.set(brightness <= dmxNight ? 0 : 1));
+      digitalWrite(lamp->channel, brightness <= offBrightness ? LOW : HIGH);
+      send(lamp->message.set(brightness <= offBrightness ? 0 : 1));
       break;
     case PIN_LOW:
-      digitalWrite(lamp->channel, brightness <= dmxNight ? HIGH : LOW);
-      send(lamp->message.set(brightness <= dmxNight ? 0 : 1));
+      digitalWrite(lamp->channel, brightness <= offBrightness ? HIGH : LOW);
+      send(lamp->message.set(brightness <= offBrightness ? 0 : 1));
       break;
     case DMX:
       DmxSimple.write(lamp->channel, brightness);
@@ -176,7 +179,7 @@ void setAll(MyButton *button, byte brightness) {
 bool allOff(MyButton *button) {
   for (int i = 0; i < button->lampsCount; i++) {
     MyLamp *lamp = *(button->lamps + i);
-    if (lamp->brightness > dmxNight) {
+    if (lamp->brightness > offBrightness) {
       return false;
     }
   }
@@ -206,9 +209,9 @@ byte getMinBrightness(MyButton *button) {
 
 void toggleOnOff(MyButton *button) {
   if (allOff(button)) {
-    setAll(button, dmxDefault);
+    setAll(button, onBrightness);
   } else {
-    setAll(button, dmxNight);
+    setAll(button, offBrightness);
   }
 }
 
@@ -216,8 +219,8 @@ void changeBrightness(MyButton *button) {
   byte minBrightness = getMinBrightness(button);
   byte brightness;
   if (button->dimmingUp) {
-    brightness = min(minBrightness + dimStep, dmxDefault);
-    if (brightness == dmxDefault) {
+    brightness = min(minBrightness + dimStep, onBrightness);
+    if (brightness == onBrightness) {
       button->dimmingUp = false;
     }
   } else {
@@ -230,7 +233,7 @@ void changeBrightness(MyButton *button) {
 }
 
 void presentation() {
-  sendSketchInfo("HomeLights", "0.0.1");
+  sendSketchInfo("HomeLights", VER);
   for (int i = 0; i < lampsCount; i++) {
     MyLamp *lamp = lamps[i];
     if (lamp->type == PIN_HIGH or lamp->type == PIN_LOW) {
@@ -239,13 +242,12 @@ void presentation() {
       present(i, S_DIMMER);
     }
   }
+  present(ON_BRIGTHTNESS_ID, S_DIMMER);
+  present(OFF_BRIGTHTNESS_ID, S_DIMMER);
 }
 
 void setup() {
   pinMode(13, OUTPUT);
-  //analogWrite(13,40);
-  //Serial.begin(115200);
-  //Serial.println("START");
   for (int i = 0; i < buttonsCount; i++) {
     print("Setup button: ", i);
     buttons[i] = &buttonsArr[i];
@@ -318,12 +320,19 @@ void receive(const MyMessage &message) {
   if (message.getType() == V_LIGHT) {
    	int state= atoi( message.data );
     if (state == 0) {
-      setBrightness(lamps[message.sensor], dmxNight);
+      setBrightness(lamps[message.sensor], offBrightness);
     } else {
       setBrightness(lamps[message.sensor], 255);
     }
 	} else if (message.getType() == V_DIMMER) {
 		int value = atoi(message.data);
-    setBrightness(lamps[message.sensor], ceil(value * 2.55));
+    byte value255 = ceil(value * 2.55);
+    if (message.sensor == ON_BRIGTHTNESS_ID) {
+      onBrightness = value255;
+    } else if (message.sensor == OFF_BRIGTHTNESS_ID) {
+      offBrightness = value255;
+    } else {
+      setBrightness(lamps[message.sensor], value255);
+    }
   }
 }
