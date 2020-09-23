@@ -117,6 +117,8 @@ struct MyButton {
 
   {"Sypialnia", Button(14, dbTime), 1, {&sypialnia} },
   {"Lozko wsp", Button(12, dbTime), 2, {&lozkoL, &lozkoP} },
+  {"Lozko L  ", Button(16, dbTime), 1, {&lozkoL} },
+  {"Lozko P  ", Button(18, dbTime), 1, {&lozkoP} },
 
   {"Salon    ", Button(16, dbTime), 2, {&salon1, &salon2} },
   {"Salon1   ", Button(21, dbTime), 1, {&salon1} },
