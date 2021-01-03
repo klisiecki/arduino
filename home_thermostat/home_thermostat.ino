@@ -9,6 +9,8 @@ DallasTemperature sensors(&ds);
 
 int lcdKey     = 0;
 int adc_key_in  = 0;
+int onPin = 12; 
+bool heatingOn = true;
 
 #define btnRIGHT  0
 #define btnUP     1
@@ -65,6 +67,7 @@ void setup() {
       Serial.begin(9600);
   }
   sensors.begin();
+  pinMode(onPin, INPUT);
   lcd.begin(16, 2);
   for (int i = 0; i < areasCount; i++) {
     pinMode(areas[i].pin, OUTPUT);
@@ -159,7 +162,8 @@ void refreshScreen() {
     lcd.setCursor(0, 1);
     lcd.print(":" + String(setTempBase, 1) + getSign(area.setTempOffset) + String(area.setTempOffset, 1) +"=" + String(getTempSet(selectedArea), 1));
   } else {
-    lcd.print("stan: TODO" );
+    String state = heatingOn ? "ON" : "OFF";
+    lcd.print("stan: " + state);
     lcd.setCursor(0, 1);
     lcd.print("Bazowa: " + String(setTempBase, 1));
   }
@@ -181,8 +185,9 @@ void updateTemps() {
 }
 
 void updatePinsState() {
+  heatingOn = digitalRead(onPin) == HIGH;
   for (int i = 0; i < areasCount; i++) {
-    if (areas[i].currentTemp > 0 && areas[i].currentTemp < getTempSet(i)) {
+    if (areas[i].currentTemp > 0 && areas[i].currentTemp < getTempSet(i) && heatingOn) {
       digitalWrite(areas[i].pin, HIGH);
     } else {
       digitalWrite(areas[i].pin, LOW);
