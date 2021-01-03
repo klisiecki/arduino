@@ -59,6 +59,11 @@ MyLamp kuchnia3 = {DMX, 12}; //21
 MyLamp kinkietL = {DMX, 19}; //22
 MyLamp kinkietP = {DMX, 20}; //23
 
+MyLamp bojler = {PIN_HIGH, 24}; //24
+MyLamp ogrzewanie = {PIN_HIGH, 26}; //25
+
+MyLamp taras = {PIN_LOW, 53}; //26
+
 
 // MyLamp kuchniaListwa = {DMX, 13};
 
@@ -68,8 +73,10 @@ MyLamp *lamps[] = {
   &salon1, &salon2, &stol, &drzwi, &piwnica,
   &korytarz1, &korytarz2, &korytarz3, &garderoba1, &garderoba2,
   &lazienkaUmywalka, &lazienkaWanna, &lazienkaReszta, &lazienkaLustro,
-  &kuchnia1, &kuchnia2, &kuchnia3, &kinkietL, &kinkietP
-  // , &kuchniaListwa
+  &kuchnia1, &kuchnia2, &kuchnia3, &kinkietL, &kinkietP,
+  &bojler, &ogrzewanie,
+  // , &kuchniaListwa,
+  &taras
 };
 
 const byte lampsCount = (sizeof(lamps) / sizeof(MyLamp*));
@@ -117,7 +124,7 @@ struct MyButton {
 
   {"Sypialnia", Button(14, dbTime), 1, {&sypialnia} },
   {"Lozko wsp", Button(12, dbTime), 2, {&lozkoL, &lozkoP} },
-  {"Lozko L  ", Button(16, dbTime), 1, {&lozkoL} },
+  {"Lozko L  ", Button(19, dbTime), 1, {&lozkoL} },
   {"Lozko P  ", Button(18, dbTime), 1, {&lozkoP} },
 
   {"Salon    ", Button(16, dbTime), 2, {&salon1, &salon2} },
@@ -125,7 +132,9 @@ struct MyButton {
   {"Salon2   ", Button(23, dbTime), 1, {&salon2} },
   {"Stol     ", Button(15, dbTime), 1, {&stol} },
 
-  {"Drzwi    ", Button(A1), 1, {&drzwi} },
+  {"Drzwi    ", Button(25), 1, {&drzwi} },
+
+  {"Taras    ", Button(27), 1, {&taras} },
 };
 
 const byte buttonsCount = (sizeof(buttonsArr) / sizeof(MyButton));
@@ -320,7 +329,7 @@ void loop() {
 
 void receive(const MyMessage &message) {
   if (message.getType() == V_LIGHT) {
-   	int state= atoi( message.data );
+   	int state= atoi(message.data);
     if (state == 0) {
       setBrightness(lamps[message.sensor], offBrightness);
     } else {
